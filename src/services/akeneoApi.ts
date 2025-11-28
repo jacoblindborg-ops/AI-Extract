@@ -91,36 +91,38 @@ class AkeneoApiService {
    * Get product by UUID
    */
   async getProduct(uuid: string): Promise<any> {
+    const url = `${this.config!.baseUrl}/api/rest/v1/products-uuid/${uuid}`;
+    console.log('[Akeneo API] Fetching product from:', url);
+    console.log('[Akeneo API] Product UUID:', uuid);
+
     // Try session-based auth first (for iframe in Akeneo Cloud)
-    let response = await fetch(
-      `${this.config!.baseUrl}/api/rest/v1/products-uuid/${uuid}`,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include', // Include cookies for session-based auth
-      }
-    );
+    let response = await fetch(url, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include', // Include cookies for session-based auth
+    });
+
+    console.log('[Akeneo API] Response status:', response.status);
 
     // If session auth fails, try OAuth token
     if (!response.ok && response.status === 401) {
       console.log('[Akeneo API] Session auth failed, trying OAuth token...');
       const token = await this.getToken();
 
-      response = await fetch(
-        `${this.config!.baseUrl}/api/rest/v1/products-uuid/${uuid}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-        }
-      );
+      response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
     }
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch product: ${response.statusText}`);
+      const errorText = await response.text();
+      console.error('[Akeneo API] Error response:', errorText);
+      throw new Error(`Failed to fetch product: ${response.statusText}. ${errorText}`);
     }
 
     return response.json();
