@@ -232,7 +232,9 @@ function buildAttributeContext(attributes) {
  * Extract attributes using Gemini API
  */
 async function extractWithGemini(apiKey, fileBase64, fileName, fileType, template, attributeContext, productData) {
-  const geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent';
+  // Use Gemini 2.5 Flash - latest free tier model with 1M token context
+  // Verified from https://ai.google.dev/pricing
+  const geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 
   // Build the prompt
   const userPrompt = `${template.systemPrompt}
