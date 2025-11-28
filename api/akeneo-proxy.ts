@@ -134,9 +134,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   } catch (error: any) {
     console.error('[Akeneo Proxy] Error:', error);
+    console.error('[Akeneo Proxy] Stack:', error.stack);
     return res.status(500).json({
       error: 'Proxy error',
-      message: error.message
+      message: error.message,
+      stack: error.stack,
+      details: error.toString()
     });
   }
 }

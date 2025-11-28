@@ -103,9 +103,16 @@ class AkeneoApiService {
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch (e) {
+        const text = await response.text();
+        console.error('[Akeneo API] Non-JSON error response:', text);
+        throw new Error(`Proxy error: ${text}`);
+      }
       console.error('[Akeneo API] Error response:', errorData);
-      throw new Error(errorData.message || 'Failed to fetch product');
+      throw new Error(errorData.message || errorData.details || 'Failed to fetch product');
     }
 
     return response.json();
