@@ -9,8 +9,10 @@ import { AIComparisonTable } from './components/AIComparisonTable';
 import { ErrorPanel } from './components/ErrorPanel';
 import { FileUploader } from './components/FileUploader';
 import { LoadingSpinner } from './components/LoadingSpinner';
+import { PromptSelector } from './components/PromptSelector';
 import { SuccessMessage } from './components/SuccessMessage';
 import { useAIEnrichment } from './hooks/useAIEnrichment';
+import { usePromptSelection } from './hooks/usePromptSelection';
 
 const Container = styled.div`
   padding: 20px;
@@ -205,6 +207,8 @@ interface AIEnrichmentContentProps {
 }
 
 function AIEnrichmentContent({ productUuid }: AIEnrichmentContentProps) {
+  const { selectedPromptId, selectPrompt } = usePromptSelection();
+
   const {
     product,
     file,
@@ -215,7 +219,7 @@ function AIEnrichmentContent({ productUuid }: AIEnrichmentContentProps) {
     successMessage,
     comparisons,
     actions,
-  } = useAIEnrichment(productUuid);
+  } = useAIEnrichment(productUuid, selectedPromptId);
 
   const selectedCount = comparisons.filter((c) => c.isSelected).length;
 
@@ -254,6 +258,12 @@ function AIEnrichmentContent({ productUuid }: AIEnrichmentContentProps) {
       {successMessage && (
         <SuccessMessage message={successMessage} onDismiss={() => actions.reloadProduct()} />
       )}
+
+      <PromptSelector
+        selectedPromptId={selectedPromptId}
+        onChange={selectPrompt}
+        disabled={isExtracting || isSaving}
+      />
 
       <Section>
         <SectionTitle>1. Upload File</SectionTitle>
