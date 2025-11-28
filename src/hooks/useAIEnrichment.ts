@@ -14,7 +14,7 @@ import type {
   SaveResult,
 } from '../types';
 
-export function useAIEnrichment(productUuid: string, promptId?: string) {
+export function useAIEnrichment(productUuid: string, promptId?: string, extractionMode?: string) {
   const [state, setState] = useState<EnrichmentState>({
     product: null,
     file: null,
@@ -163,9 +163,11 @@ export function useAIEnrichment(productUuid: string, promptId?: string) {
           productData: state.product,
           familyAttributes: familyAttributes, // Dynamic attributes from product family
           promptId: promptId || 'default', // Selected prompt template ID
+          extractionMode: extractionMode || 'all', // 'all' or 'empty' - controls which attributes to extract
         };
 
         console.log('[AI Enrichment] Using prompt template:', promptId || 'default');
+        console.log('[AI Enrichment] Extraction mode:', extractionMode || 'all');
 
         // 🎯 Direct fetch to Cloudflare Worker - NO SDK TIMEOUT!
         console.log('[AI Enrichment Iframe] Sending to AI proxy:', EXTENSION_CONFIG.makeWebhookUrl);
@@ -242,7 +244,7 @@ export function useAIEnrichment(productUuid: string, promptId?: string) {
         }));
       }
     },
-    [state.product, productUuid, fetchFamilyAttributes]
+    [state.product, productUuid, promptId, extractionMode, fetchFamilyAttributes]
   );
 
   /**

@@ -207,7 +207,7 @@ interface AIEnrichmentContentProps {
 }
 
 function AIEnrichmentContent({ productUuid }: AIEnrichmentContentProps) {
-  const { selectedPromptId, selectPrompt } = usePromptSelection();
+  const { selectedPromptId, selectPrompt, extractionMode, selectExtractionMode } = usePromptSelection();
 
   const {
     product,
@@ -219,7 +219,7 @@ function AIEnrichmentContent({ productUuid }: AIEnrichmentContentProps) {
     successMessage,
     comparisons,
     actions,
-  } = useAIEnrichment(productUuid, selectedPromptId);
+  } = useAIEnrichment(productUuid, selectedPromptId, extractionMode);
 
   const selectedCount = comparisons.filter((c) => c.isSelected).length;
 
@@ -262,6 +262,8 @@ function AIEnrichmentContent({ productUuid }: AIEnrichmentContentProps) {
       <PromptSelector
         selectedPromptId={selectedPromptId}
         onChange={selectPrompt}
+        extractionMode={extractionMode}
+        onExtractionModeChange={selectExtractionMode}
         disabled={isExtracting || isSaving}
       />
 
