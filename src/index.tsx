@@ -18,11 +18,13 @@ console.log('[AI Enrichment Iframe] Starting...');
 // Parse URL params from Akeneo
 const urlParams = new URLSearchParams(window.location.search);
 const contextFromUrl = {
-  userUuid: urlParams.get('user_uuid'),
-  username: urlParams.get('username'),
-  locale: urlParams.get('locale'),
-  channel: urlParams.get('channel'),
-  productUuid: urlParams.get('product_uuid'), // If passed via URL
+  userUuid: urlParams.get('user[uuid]') || urlParams.get('user_uuid'),
+  username: urlParams.get('user[username]') || urlParams.get('username'),
+  locale: urlParams.get('user[catalog_locale]') || urlParams.get('locale'),
+  channel: urlParams.get('user[catalog_scope]') || urlParams.get('channel'),
+  productUuid: urlParams.get('product[uuid]') || urlParams.get('product_uuid'),
+  productIdentifier: urlParams.get('product[identifier]'),
+  tenant: urlParams.get('tenant'),
   akeneoUrl: urlParams.get('akeneo_url'), // Base URL of Akeneo instance
   accessToken: urlParams.get('access_token'), // Optional: Pre-generated access token
 };
@@ -38,7 +40,36 @@ console.log('[AI Enrichment Iframe] Context from URL:', {
 // 2. OAuth credentials (configure in code below)
 // 3. Session-based authentication (if same domain)
 
-const akeneoBaseUrl = contextFromUrl.akeneoUrl || window.location.origin;
+// Get Akeneo base URL - try multiple sources
+let akeneoBaseUrl = contextFromUrl.akeneoUrl;
+
+// If not in params, try to get from referrer (parent Akeneo window)
+if (!akeneoBaseUrl && document.referrer) {
+  try {
+    const referrerUrl = new URL(document.referrer);
+    akeneoBaseUrl = `${referrerUrl.protocol}//${referrerUrl.host}`;
+    console.log('[AI Enrichment Iframe] Akeneo URL from referrer:', akeneoBaseUrl);
+  } catch (e) {
+    console.warn('[AI Enrichment Iframe] Could not parse referrer URL');
+  }
+}
+
+// Fallback to parent window location
+if (!akeneoBaseUrl && window.parent !== window) {
+  try {
+    akeneoBaseUrl = `${window.parent.location.protocol}//${window.parent.location.host}`;
+    console.log('[AI Enrichment Iframe] Akeneo URL from parent window:', akeneoBaseUrl);
+  } catch (e) {
+    // Cross-origin restrictions - can't access parent location
+    console.warn('[AI Enrichment Iframe] Cannot access parent window (CORS)');
+  }
+}
+
+// Last resort fallback
+if (!akeneoBaseUrl) {
+  akeneoBaseUrl = window.location.origin;
+  console.warn('[AI Enrichment Iframe] Using fallback URL:', akeneoBaseUrl);
+}
 
 // Option 1: If access token provided via URL, use it
 if (contextFromUrl.accessToken) {

@@ -122,7 +122,9 @@ export function AIEnrichmentApp() {
 
         // Parse URL parameters passed by Akeneo
         const urlParams = new URLSearchParams(window.location.search);
-        let productUuid = urlParams.get('product_uuid');
+
+        // Akeneo passes parameters with bracket notation: product[uuid]
+        let productUuid = urlParams.get('product_uuid') || urlParams.get('product[uuid]');
 
         // If not in URL, try to get from PostMessage
         if (!productUuid) {
