@@ -7,8 +7,6 @@
  * Browser → Vercel Function → Akeneo API ✅ No CORS!
  */
 
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-
 // Akeneo credentials - these should be in environment variables in production
 const AKENEO_CONFIG = {
   baseUrl: 'https://columbus-partnership-69e2883482.demo.cloud.akeneo.com',
@@ -18,12 +16,12 @@ const AKENEO_CONFIG = {
   password: '3e681f0f6',
 };
 
-let cachedToken: { token: string; expiresAt: number } | null = null;
+let cachedToken = null;
 
 /**
  * Get OAuth access token (with caching)
  */
-async function getAccessToken(): Promise<string> {
+async function getAccessToken() {
   // Return cached token if still valid
   if (cachedToken && cachedToken.expiresAt > Date.now()) {
     return cachedToken.token;
@@ -66,7 +64,7 @@ async function getAccessToken(): Promise<string> {
 /**
  * Proxy handler
  */
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+module.exports = async function handler(req, res) {
   // Enable CORS for the iframe
   res.setHeader('Access-Control-Allow-Origin', '*'); // In production: restrict to your Vercel domain
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, OPTIONS');
@@ -93,8 +91,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.log(`[Akeneo Proxy] ${method} ${apiUrl}`);
 
     // Make request to Akeneo
-    const fetchOptions: RequestInit = {
-      method: method as string,
+    const fetchOptions = {
+      method: method,
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -132,7 +130,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     return res.status(200).json(data);
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('[Akeneo Proxy] Error:', error);
     console.error('[Akeneo Proxy] Stack:', error.stack);
     return res.status(500).json({
@@ -142,4 +140,4 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       details: error.toString()
     });
   }
-}
+};
