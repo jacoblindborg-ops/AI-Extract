@@ -1,0 +1,14 @@
+# Cloudflare Worker Configuration for Akeneo AI Iframe Extension
+
+name = "akeneo-ai-iframe-worker"
+main = "akeneo-ai-iframe-worker.js"
+compatibility_date = "2024-01-01"
+
+# Environment variables (set these in Cloudflare Dashboard or use wrangler secret)
+# GEMINI_API_KEY = "your-api-key-here"
+
+[env.production]
+name = "akeneo-ai-iframe-worker"
+
+[env.staging]
+name = "akeneo-ai-iframe-worker-staging"

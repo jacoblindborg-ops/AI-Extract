@@ -11,9 +11,9 @@
 import type { ExtensionConfig } from './types';
 
 export const EXTENSION_CONFIG: ExtensionConfig = {
-  // Cloudflare Worker URL for AI extraction
-  // Replace with your deployed worker URL after deployment
-  makeWebhookUrl: 'https://sparkling-term-6be2.jacob-lindborg.workers.dev',
+  // Cloudflare Worker URL for AI extraction (iframe-specific worker with prompt templates)
+  // This worker supports 5 prompt templates and extraction modes (all/empty)
+  makeWebhookUrl: 'https://polished-mode-6d33.jacob-lindborg.workers.dev',
 
   // Credentials code configured in Akeneo for SDK external calls
   // Configure in Akeneo UI: Connections > Credentials
