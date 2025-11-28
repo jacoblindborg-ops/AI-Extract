@@ -39,23 +39,31 @@ class AkeneoApiService {
       throw new Error('Akeneo API not configured');
     }
 
-    // For now, accept token from config or generate from credentials
-    // In production, handle OAuth flow properly
+    // OAuth flow with proper Akeneo authentication
     if (this.config.clientId && this.config.secret) {
+      // Akeneo requires Basic Auth header with client credentials
+      const basicAuth = btoa(`${this.config.clientId}:${this.config.secret}`);
+
+      // Build form-encoded body
+      const formBody = new URLSearchParams({
+        grant_type: 'password',
+        username: this.config.username || '',
+        password: this.config.password || '',
+      });
+
       const response = await fetch(`${this.config.baseUrl}/api/oauth/v1/token`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Authorization': `Basic ${basicAuth}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: JSON.stringify({
-          grant_type: 'password',
-          username: this.config.username,
-          password: this.config.password,
-        }),
+        body: formBody.toString(),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to authenticate with Akeneo');
+        const errorText = await response.text();
+        console.error('[Akeneo API] Auth failed:', response.status, errorText);
+        throw new Error(`Failed to authenticate with Akeneo: ${response.status} ${errorText}`);
       }
 
       const data = await response.json();
