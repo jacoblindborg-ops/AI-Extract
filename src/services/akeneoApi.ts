@@ -91,38 +91,21 @@ class AkeneoApiService {
    * Get product by UUID
    */
   async getProduct(uuid: string): Promise<any> {
-    const url = `${this.config!.baseUrl}/api/rest/v1/products-uuid/${uuid}`;
-    console.log('[Akeneo API] Fetching product from:', url);
-    console.log('[Akeneo API] Product UUID:', uuid);
+    // Use backend proxy to avoid CORS issues
+    const proxyUrl = `/api/akeneo-proxy?method=GET&path=products-uuid/${uuid}`;
+    console.log('[Akeneo API] Fetching product via proxy:', proxyUrl);
 
-    // Try session-based auth first (for iframe in Akeneo Cloud)
-    let response = await fetch(url, {
+    const response = await fetch(proxyUrl, {
+      method: 'GET',
       headers: {
         'Content-Type': 'application/json',
       },
-      credentials: 'include', // Include cookies for session-based auth
     });
 
-    console.log('[Akeneo API] Response status:', response.status);
-
-    // If session auth fails, try OAuth token
-    if (!response.ok && response.status === 401) {
-      console.log('[Akeneo API] Session auth failed, trying OAuth token...');
-      const token = await this.getToken();
-
-      response = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-      });
-    }
-
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('[Akeneo API] Error response:', errorText);
-      throw new Error(`Failed to fetch product: ${response.statusText}. ${errorText}`);
+      const errorData = await response.json();
+      console.error('[Akeneo API] Error response:', errorData);
+      throw new Error(errorData.message || 'Failed to fetch product');
     }
 
     return response.json();
@@ -132,18 +115,11 @@ class AkeneoApiService {
    * Get family by code
    */
   async getFamily(code: string): Promise<any> {
-    const response = await fetch(
-      `${this.config!.baseUrl}/api/rest/v1/families/${code}`,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-      }
-    );
+    const response = await fetch(`/api/akeneo-proxy?method=GET&path=families/${code}`);
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch family: ${response.statusText}`);
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to fetch family');
     }
 
     return response.json();
@@ -153,18 +129,11 @@ class AkeneoApiService {
    * Get attribute by code
    */
   async getAttribute(code: string): Promise<any> {
-    const response = await fetch(
-      `${this.config!.baseUrl}/api/rest/v1/attributes/${code}`,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-      }
-    );
+    const response = await fetch(`/api/akeneo-proxy?method=GET&path=attributes/${code}`);
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch attribute: ${response.statusText}`);
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to fetch attribute');
     }
 
     return response.json();
@@ -174,18 +143,11 @@ class AkeneoApiService {
    * Get attribute options
    */
   async getAttributeOptions(attributeCode: string): Promise<any[]> {
-    const response = await fetch(
-      `${this.config!.baseUrl}/api/rest/v1/attributes/${attributeCode}/options`,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-      }
-    );
+    const response = await fetch(`/api/akeneo-proxy?method=GET&path=attributes/${attributeCode}/options`);
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch options: ${response.statusText}`);
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to fetch options');
     }
 
     const data = await response.json();
@@ -195,25 +157,21 @@ class AkeneoApiService {
   /**
    * Update product by UUID
    */
-  async updateProduct(uuid: string, data: any): Promise<any> {
-    const response = await fetch(
-      `${this.config!.baseUrl}/api/rest/v1/products-uuid/${uuid}`,
-      {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(data),
-      }
-    );
+  async updateProduct(uuid: string, productData: any): Promise<any> {
+    const response = await fetch(`/api/akeneo-proxy?method=PATCH&path=products-uuid/${uuid}`, {
+      method: 'POST', // We use POST to the proxy, it will forward as PATCH
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(productData),
+    });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Failed to update product: ${response.statusText}\n${errorText}`);
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to update product');
     }
 
-    return response.status === 204 ? { success: true } : response.json();
+    return response.json();
   }
 }
 
