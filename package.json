@@ -1,0 +1,33 @@
+{
+  "name": "akeneo-ai-enrichment-iframe",
+  "version": "2.0.0",
+  "description": "Akeneo Iframe Extension for AI-powered product attribute enrichment (standalone app)",
+  "main": "src/index.tsx",
+  "scripts": {
+    "build": "webpack --mode production",
+    "dev": "webpack serve --mode development --open",
+    "start": "webpack serve --mode development --open",
+    "lint": "biome lint ./src",
+    "lint:fix": "biome lint --write ./src",
+    "format": "biome format --write ./src",
+    "check": "biome check --write ./src"
+  },
+  "dependencies": {
+    "akeneo-design-system": "^4.0.7",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "styled-components": "^6.1.19"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.3.7",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@types/styled-components": "^5.1.36",
+    "html-webpack-plugin": "^5.5.0",
+    "ts-loader": "^9.4.0",
+    "typescript": "^5.0.0",
+    "webpack": "^5.88.0",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^4.15.1"
+  }
+}
