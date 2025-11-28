@@ -65,10 +65,10 @@ if (!akeneoBaseUrl && window.parent !== window) {
   }
 }
 
-// Last resort fallback
+// Hardcoded fallback to your Akeneo instance
 if (!akeneoBaseUrl) {
-  akeneoBaseUrl = window.location.origin;
-  console.warn('[AI Enrichment Iframe] Using fallback URL:', akeneoBaseUrl);
+  akeneoBaseUrl = 'https://columbus-partnership-69e2883482.demo.cloud.akeneo.com';
+  console.log('[AI Enrichment Iframe] Using hardcoded Akeneo URL:', akeneoBaseUrl);
 }
 
 // Option 1: If access token provided via URL, use it
