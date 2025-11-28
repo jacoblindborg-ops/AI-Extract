@@ -182,9 +182,14 @@ export function AIEnrichmentApp() {
 
   // Show error if no product UUID
   if (!productUuid) {
+    // Debug: Show what URL params we got
+    const currentUrl = window.location.href;
+    const urlParams = new URLSearchParams(window.location.search);
+    const allParams = Array.from(urlParams.entries()).map(([k, v]) => `${k}=${v}`).join(', ');
+
     return (
       <ErrorPanel
-        message="Cannot load extension - no product context found. Please ensure you are on a product edit page."
+        message={`Cannot load extension - no product UUID found.\n\nCurrent URL: ${currentUrl}\n\nURL Parameters: ${allParams || 'none'}\n\nExpected parameter: product_uuid\n\nPlease configure iframe URL with: ?product_uuid={{product_uuid}}&akeneo_url={{akeneo_url}}`}
         onRetry={() => window.location.reload()}
       />
     );
