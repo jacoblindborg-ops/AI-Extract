@@ -41,6 +41,9 @@ class AkeneoApiService {
 
     // OAuth flow with proper Akeneo authentication
     if (this.config.clientId && this.config.secret) {
+      const authUrl = `${this.config.baseUrl}/api/oauth/v1/token`;
+      console.log('[Akeneo API] Attempting OAuth at:', authUrl);
+
       // Akeneo requires Basic Auth header with client credentials
       const basicAuth = btoa(`${this.config.clientId}:${this.config.secret}`);
 
@@ -51,7 +54,14 @@ class AkeneoApiService {
         password: this.config.password || '',
       });
 
-      const response = await fetch(`${this.config.baseUrl}/api/oauth/v1/token`, {
+      console.log('[Akeneo API] Request details:', {
+        url: authUrl,
+        method: 'POST',
+        grantType: 'password',
+        username: this.config.username,
+      });
+
+      const response = await fetch(authUrl, {
         method: 'POST',
         headers: {
           'Authorization': `Basic ${basicAuth}`,
@@ -81,17 +91,33 @@ class AkeneoApiService {
    * Get product by UUID
    */
   async getProduct(uuid: string): Promise<any> {
-    const token = await this.getToken();
-
-    const response = await fetch(
+    // Try session-based auth first (for iframe in Akeneo Cloud)
+    let response = await fetch(
       `${this.config!.baseUrl}/api/rest/v1/products-uuid/${uuid}`,
       {
         headers: {
-          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Include cookies for session-based auth
       }
     );
+
+    // If session auth fails, try OAuth token
+    if (!response.ok && response.status === 401) {
+      console.log('[Akeneo API] Session auth failed, trying OAuth token...');
+      const token = await this.getToken();
+
+      response = await fetch(
+        `${this.config!.baseUrl}/api/rest/v1/products-uuid/${uuid}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+        }
+      );
+    }
 
     if (!response.ok) {
       throw new Error(`Failed to fetch product: ${response.statusText}`);
@@ -104,15 +130,13 @@ class AkeneoApiService {
    * Get family by code
    */
   async getFamily(code: string): Promise<any> {
-    const token = await this.getToken();
-
     const response = await fetch(
       `${this.config!.baseUrl}/api/rest/v1/families/${code}`,
       {
         headers: {
-          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
       }
     );
 
@@ -127,15 +151,13 @@ class AkeneoApiService {
    * Get attribute by code
    */
   async getAttribute(code: string): Promise<any> {
-    const token = await this.getToken();
-
     const response = await fetch(
       `${this.config!.baseUrl}/api/rest/v1/attributes/${code}`,
       {
         headers: {
-          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
       }
     );
 
@@ -150,15 +172,13 @@ class AkeneoApiService {
    * Get attribute options
    */
   async getAttributeOptions(attributeCode: string): Promise<any[]> {
-    const token = await this.getToken();
-
     const response = await fetch(
       `${this.config!.baseUrl}/api/rest/v1/attributes/${attributeCode}/options`,
       {
         headers: {
-          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
       }
     );
 
@@ -174,16 +194,14 @@ class AkeneoApiService {
    * Update product by UUID
    */
   async updateProduct(uuid: string, data: any): Promise<any> {
-    const token = await this.getToken();
-
     const response = await fetch(
       `${this.config!.baseUrl}/api/rest/v1/products-uuid/${uuid}`,
       {
         method: 'PATCH',
         headers: {
-          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify(data),
       }
     );
