@@ -41,6 +41,7 @@ export interface AttributeValue {
 // Extension Configuration Types
 export interface ExtensionConfig {
   makeWebhookUrl: string; // Full webhook URL for AI extraction
+  workerApiKey: string; // API key for authenticating with worker
   credentialsCode: string; // Credentials code configured in Akeneo
   confidenceThreshold: number; // Auto-check if confidence >= this value
   supportedFileTypes: string[]; // e.g., ['application/pdf', 'image/jpeg', 'image/png']

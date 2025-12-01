@@ -15,6 +15,12 @@ export const EXTENSION_CONFIG: ExtensionConfig = {
   // This worker supports 5 prompt templates and extraction modes (all/empty)
   makeWebhookUrl: 'https://polished-mode-6d33.jacob-lindborg.workers.dev',
 
+  // Worker API Key - must match WORKER_API_KEY secret in Cloudflare
+  // Generate a random secure key: openssl rand -base64 32
+  // Set in Vercel: Environment Variables > VITE_WORKER_API_KEY
+  // Set in Cloudflare: wrangler secret put WORKER_API_KEY
+  workerApiKey: import.meta.env.VITE_WORKER_API_KEY || 'CHANGE_ME_TO_RANDOM_SECRET',
+
   // Credentials code configured in Akeneo for SDK external calls
   // Configure in Akeneo UI: Connections > Credentials
   // Type: Bearer Token

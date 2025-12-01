@@ -59,11 +59,20 @@ Prioritize data that would be needed for technical documentation, compliance, an
 // ===== MAIN HANDLER =====
 export default {
   async fetch(request, env) {
-    // CORS headers
+    // Allowed origins for CORS (only your Vercel app)
+    const allowedOrigins = [
+      'https://ai-extract-ten.vercel.app',
+      'http://localhost:3000', // For local development
+    ];
+
+    const origin = request.headers.get('Origin');
+    const isAllowedOrigin = allowedOrigins.includes(origin);
+
+    // CORS headers - only allow specific origins
     const corsHeaders = {
-      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Origin': isAllowedOrigin ? origin : allowedOrigins[0],
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Headers': 'Content-Type, X-API-Key',
     };
 
     // Handle CORS preflight
@@ -75,6 +84,23 @@ export default {
     if (request.method !== 'POST') {
       return new Response('Method not allowed', { status: 405, headers: corsHeaders });
     }
+
+    // ===== AUTHENTICATION CHECK =====
+    const providedKey = request.headers.get('X-API-Key');
+    const validKey = env.WORKER_API_KEY; // Secret stored in Cloudflare
+
+    if (!providedKey || providedKey !== validKey) {
+      console.error('[Worker] Authentication failed - invalid or missing API key');
+      return new Response(
+        JSON.stringify({
+          success: false,
+          message: 'Unauthorized - Invalid or missing API key',
+        }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('[Worker] Authentication successful');
 
     try {
       // Parse incoming payload

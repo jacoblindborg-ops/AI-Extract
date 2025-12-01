@@ -179,6 +179,7 @@ export function useAIEnrichment(productUuid: string, promptId?: string, extracti
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'X-API-Key': EXTENSION_CONFIG.workerApiKey, // Authentication
           },
           body: JSON.stringify(payload),
           // No timeout limit - can wait 60+ seconds!
