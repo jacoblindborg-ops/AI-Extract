@@ -21,6 +21,8 @@ export interface AttributeMetadata {
   type: string; // text, textarea, pim_catalog_simpleselect, pim_catalog_multiselect, etc.
   labels?: Record<string, string>;
   options?: AttributeOption[];
+  scopable?: boolean; // Whether attribute uses channels
+  localizable?: boolean; // Whether attribute uses locales
 }
 
 export interface AttributeOption {
@@ -79,6 +81,8 @@ export interface EnrichmentComparison extends AIAttributeProposal {
   editedValue?: string; // User-edited value (overrides proposedValue)
   attributeType?: string; // Attribute type (text, select, multiselect, etc.)
   options?: AttributeOption[]; // Available options for select/multiselect
+  scopable?: boolean; // Whether attribute uses channels
+  localizable?: boolean; // Whether attribute uses locales
 }
 
 export interface EnrichmentState {

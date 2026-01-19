@@ -19,7 +19,7 @@ export const EXTENSION_CONFIG: ExtensionConfig = {
   // Generate a random secure key: openssl rand -base64 32
   // Set in Vercel: Environment Variables > VITE_WORKER_API_KEY
   // Set in Cloudflare: wrangler secret put WORKER_API_KEY
-  workerApiKey: import.meta.env.VITE_WORKER_API_KEY || 'CHANGE_ME_TO_RANDOM_SECRET',
+  workerApiKey: (typeof process !== 'undefined' && process.env?.VITE_WORKER_API_KEY) || 'CHANGE_ME_TO_RANDOM_SECRET',
 
   // Credentials code configured in Akeneo for SDK external calls
   // Configure in Akeneo UI: Connections > Credentials

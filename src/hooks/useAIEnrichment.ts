@@ -95,6 +95,8 @@ export function useAIEnrichment(productUuid: string, promptId?: string, extracti
               type: attr.type,
               labels: attr.labels,
               options: options,
+              scopable: attr.scopable || false,
+              localizable: attr.localizable || false,
             };
           } catch (err: any) {
             console.warn(`[AI Enrichment Iframe] Could not fetch metadata for attribute ${code}:`, err.message);
@@ -224,6 +226,8 @@ export function useAIEnrichment(productUuid: string, promptId?: string, extracti
             isDifferent,
             attributeType: metadata?.type || 'text',
             options: metadata?.options || [],
+            scopable: metadata?.scopable || false,
+            localizable: metadata?.localizable || false,
           };
         });
 
@@ -346,14 +350,20 @@ export function useAIEnrichment(productUuid: string, promptId?: string, extracti
           valuesToUpdate[comp.code] = [...(state.product!.values[comp.code] || [])];
         }
 
+        // Determine correct locale/scope based on attribute properties
+        // Non-scopable attributes must have scope: null
+        // Non-localizable attributes must have locale: null
+        const effectiveScope = comp.scopable ? comp.scope : null;
+        const effectiveLocale = comp.localizable ? comp.locale : null;
+
         // Find or create the value entry for this locale/scope
         const existingIndex = valuesToUpdate[comp.code].findIndex(
-          (v) => v.locale === comp.locale && v.scope === comp.scope
+          (v) => v.locale === effectiveLocale && v.scope === effectiveScope
         );
 
         const newValue = {
-          locale: comp.locale,
-          scope: comp.scope,
+          locale: effectiveLocale,
+          scope: effectiveScope,
           data: comp.editedValue || comp.proposedValue, // Use edited value if available
         };
 
