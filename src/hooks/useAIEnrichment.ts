@@ -356,6 +356,8 @@ export function useAIEnrichment(productUuid: string, promptId?: string, extracti
         const effectiveScope = comp.scopable ? comp.scope : null;
         const effectiveLocale = comp.localizable ? comp.locale : null;
 
+        console.log(`[AI Enrichment] Attribute ${comp.code}: scopable=${comp.scopable}, localizable=${comp.localizable}, effectiveScope=${effectiveScope}, effectiveLocale=${effectiveLocale}`);
+
         // Find or create the value entry for this locale/scope
         const existingIndex = valuesToUpdate[comp.code].findIndex(
           (v) => v.locale === effectiveLocale && v.scope === effectiveScope

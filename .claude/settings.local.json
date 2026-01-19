@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl:*)",
+      "WebFetch(domain:api.akeneo.com)",
+      "Bash(npm run create-subscription:*)",
+      "WebFetch(domain:storage.googleapis.com)",
+      "Bash(npx wrangler secret put:*)",
+      "Bash(npm run check-subscription:*)",
+      "Bash(npm run list-subscriptions:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
