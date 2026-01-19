@@ -175,8 +175,22 @@ class AkeneoApiService {
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to update product');
+      const errorText = await response.text();
+      console.error('[Akeneo API] Update failed:', response.status, errorText);
+
+      try {
+        const errorData = JSON.parse(errorText);
+        // Log detailed validation errors
+        if (errorData.details?.errors) {
+          console.error('[Akeneo API] Validation errors:', JSON.stringify(errorData.details.errors, null, 2));
+        }
+        throw new Error(errorData.message || JSON.stringify(errorData.details) || 'Failed to update product');
+      } catch (e) {
+        if (e instanceof SyntaxError) {
+          throw new Error(`Failed to update product: ${errorText}`);
+        }
+        throw e;
+      }
     }
 
     return response.json();
