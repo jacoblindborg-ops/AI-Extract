@@ -201,6 +201,49 @@ export function useAIEnrichment(productUuid: string, promptId?: string, extracti
           throw new Error(extractionResponse.message || 'AI extraction failed');
         }
 
+        // Helper function to map AI value to valid option code
+        const mapToOptionCode = (value: string, options: any[]): string => {
+          if (!options || options.length === 0) return value;
+
+          const valueLower = value.toLowerCase().trim();
+
+          // 1. Exact match on code
+          const exactCode = options.find((opt: any) => opt.code === value);
+          if (exactCode) return exactCode.code;
+
+          // 2. Case-insensitive match on code
+          const caseInsensitiveCode = options.find((opt: any) =>
+            opt.code.toLowerCase() === valueLower
+          );
+          if (caseInsensitiveCode) return caseInsensitiveCode.code;
+
+          // 3. Exact match on any label
+          const exactLabel = options.find((opt: any) => {
+            if (!opt.labels) return false;
+            return Object.values(opt.labels).some((label: any) => label === value);
+          });
+          if (exactLabel) return exactLabel.code;
+
+          // 4. Case-insensitive match on any label
+          const caseInsensitiveLabel = options.find((opt: any) => {
+            if (!opt.labels) return false;
+            return Object.values(opt.labels).some((label: any) =>
+              (label as string).toLowerCase() === valueLower
+            );
+          });
+          if (caseInsensitiveLabel) return caseInsensitiveLabel.code;
+
+          // 5. Partial match (code contains value or vice versa)
+          const partialMatch = options.find((opt: any) =>
+            opt.code.toLowerCase().includes(valueLower) ||
+            valueLower.includes(opt.code.toLowerCase())
+          );
+          if (partialMatch) return partialMatch.code;
+
+          console.warn(`[AI Enrichment] Could not map "${value}" to any option, using original`);
+          return value;
+        };
+
         // Build comparisons from proposals with attribute metadata
         const comparisons: EnrichmentComparison[] = extractionResponse.proposals.map((proposal) => {
           const currentValueArray = state.product!.values[proposal.code] || [];
@@ -209,23 +252,40 @@ export function useAIEnrichment(productUuid: string, promptId?: string, extracti
           );
           const currentValue = currentValueObj?.data?.toString() || null;
 
-          const isDifferent = currentValue !== proposal.proposedValue;
-          const isAutoSelected = proposal.confidence >= EXTENSION_CONFIG.confidenceThreshold;
-
           // Find attribute metadata (type and options)
           const attrMetadata = familyAttributes?.find((attr: any) =>
             (typeof attr === 'string' ? attr === proposal.code : attr.code === proposal.code)
           );
 
           const metadata: any = typeof attrMetadata === 'object' && attrMetadata !== null ? attrMetadata : null;
+          const options = metadata?.options || [];
+          const attrType = metadata?.type || 'text';
+
+          // Map proposed value to valid option code for select attributes
+          let mappedValue = proposal.proposedValue;
+          if ((attrType === 'pim_catalog_simpleselect' || attrType === 'pim_catalog_multiselect') && options.length > 0) {
+            if (Array.isArray(proposal.proposedValue)) {
+              // Multiselect - map each value
+              mappedValue = proposal.proposedValue.map((v: string) => mapToOptionCode(v, options));
+            } else {
+              mappedValue = mapToOptionCode(proposal.proposedValue, options);
+            }
+            if (mappedValue !== proposal.proposedValue) {
+              console.log(`[AI Enrichment] Mapped "${proposal.proposedValue}" -> "${mappedValue}" for ${proposal.code}`);
+            }
+          }
+
+          const isDifferent = currentValue !== mappedValue;
+          const isAutoSelected = proposal.confidence >= EXTENSION_CONFIG.confidenceThreshold;
 
           return {
             ...proposal,
+            proposedValue: mappedValue,
             currentValue,
             isSelected: isDifferent && isAutoSelected, // Auto-select high-confidence changes
             isDifferent,
-            attributeType: metadata?.type || 'text',
-            options: metadata?.options || [],
+            attributeType: attrType,
+            options: options,
             scopable: metadata?.scopable || false,
             localizable: metadata?.localizable || false,
           };
