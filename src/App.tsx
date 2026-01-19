@@ -244,8 +244,8 @@ function AIEnrichmentContent({ productUuid }: AIEnrichmentContentProps) {
   return (
     <Container>
       <Header>
-        <Title>AI Product Enrichment</Title>
-        <Subtitle>Upload a PDF or image to extract and enrich product attributes with AI</Subtitle>
+        <Title>HELLO WORLD - TEST DEPLOY</Title>
+        <Subtitle>If you see this, deployment is working!</Subtitle>
       </Header>
 
       {product && (
