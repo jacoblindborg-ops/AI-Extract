@@ -201,6 +201,16 @@ export function useAIEnrichment(productUuid: string, promptId?: string, extracti
           throw new Error(extractionResponse.message || 'AI extraction failed');
         }
 
+        // Unsupported attribute types that we can't handle
+        const unsupportedTypes = [
+          'pim_catalog_table',
+          'akeneo_reference_entity',
+          'akeneo_reference_entity_collection',
+          'pim_catalog_asset_collection',
+          'pim_catalog_file',
+          'pim_catalog_image',
+        ];
+
         // Helper function to map AI value to valid option code
         const mapToOptionCode = (value: string, options: any[]): string => {
           if (!options || options.length === 0) return value;
@@ -261,6 +271,12 @@ export function useAIEnrichment(productUuid: string, promptId?: string, extracti
           const options = metadata?.options || [];
           const attrType = metadata?.type || 'text';
 
+          // Skip unsupported attribute types
+          if (unsupportedTypes.includes(attrType)) {
+            console.warn(`[AI Enrichment] Skipping unsupported attribute type: ${proposal.code} (${attrType})`);
+            return null;
+          }
+
           // Map proposed value to valid option code for select attributes
           let mappedValue = proposal.proposedValue;
           if ((attrType === 'pim_catalog_simpleselect' || attrType === 'pim_catalog_multiselect') && options.length > 0) {
@@ -289,9 +305,9 @@ export function useAIEnrichment(productUuid: string, promptId?: string, extracti
             scopable: metadata?.scopable || false,
             localizable: metadata?.localizable || false,
           };
-        });
+        }).filter((c): c is EnrichmentComparison => c !== null);
 
-        console.log('[AI Enrichment] Created', comparisons.length, 'comparisons');
+        console.log('[AI Enrichment] Created', comparisons.length, 'comparisons (skipped unsupported types)');
 
         setState((prev) => ({
           ...prev,
