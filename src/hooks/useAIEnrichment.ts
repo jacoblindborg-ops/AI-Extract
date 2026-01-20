@@ -255,57 +255,59 @@ export function useAIEnrichment(productUuid: string, promptId?: string, extracti
         };
 
         // Build comparisons from proposals with attribute metadata
-        const comparisons: EnrichmentComparison[] = extractionResponse.proposals.map((proposal) => {
-          const currentValueArray = state.product!.values[proposal.code] || [];
-          const currentValueObj = currentValueArray.find(
-            (v) => v.locale === proposal.locale && v.scope === proposal.scope
-          );
-          const currentValue = currentValueObj?.data?.toString() || null;
+        const comparisons: EnrichmentComparison[] = extractionResponse.proposals
+          .map((proposal): EnrichmentComparison | null => {
+            const currentValueArray = state.product!.values[proposal.code] || [];
+            const currentValueObj = currentValueArray.find(
+              (v) => v.locale === proposal.locale && v.scope === proposal.scope
+            );
+            const currentValue = currentValueObj?.data?.toString() || null;
 
-          // Find attribute metadata (type and options)
-          const attrMetadata = familyAttributes?.find((attr: any) =>
-            (typeof attr === 'string' ? attr === proposal.code : attr.code === proposal.code)
-          );
+            // Find attribute metadata (type and options)
+            const attrMetadata = familyAttributes?.find((attr: any) =>
+              (typeof attr === 'string' ? attr === proposal.code : attr.code === proposal.code)
+            );
 
-          const metadata: any = typeof attrMetadata === 'object' && attrMetadata !== null ? attrMetadata : null;
-          const options = metadata?.options || [];
-          const attrType = metadata?.type || 'text';
+            const metadata: any = typeof attrMetadata === 'object' && attrMetadata !== null ? attrMetadata : null;
+            const options = metadata?.options || [];
+            const attrType = metadata?.type || 'text';
 
-          // Skip unsupported attribute types
-          if (unsupportedTypes.includes(attrType)) {
-            console.warn(`[AI Enrichment] Skipping unsupported attribute type: ${proposal.code} (${attrType})`);
-            return null;
-          }
-
-          // Map proposed value to valid option code for select attributes
-          let mappedValue = proposal.proposedValue;
-          if ((attrType === 'pim_catalog_simpleselect' || attrType === 'pim_catalog_multiselect') && options.length > 0) {
-            if (Array.isArray(proposal.proposedValue)) {
-              // Multiselect - map each value
-              mappedValue = proposal.proposedValue.map((v: string) => mapToOptionCode(v, options));
-            } else {
-              mappedValue = mapToOptionCode(proposal.proposedValue, options);
+            // Skip unsupported attribute types
+            if (unsupportedTypes.includes(attrType)) {
+              console.warn(`[AI Enrichment] Skipping unsupported attribute type: ${proposal.code} (${attrType})`);
+              return null;
             }
-            if (mappedValue !== proposal.proposedValue) {
-              console.log(`[AI Enrichment] Mapped "${proposal.proposedValue}" -> "${mappedValue}" for ${proposal.code}`);
+
+            // Map proposed value to valid option code for select attributes
+            let mappedValue: any = proposal.proposedValue;
+            if ((attrType === 'pim_catalog_simpleselect' || attrType === 'pim_catalog_multiselect') && options.length > 0) {
+              if (Array.isArray(proposal.proposedValue)) {
+                // Multiselect - map each value
+                mappedValue = (proposal.proposedValue as string[]).map((v: string) => mapToOptionCode(v, options));
+              } else {
+                mappedValue = mapToOptionCode(proposal.proposedValue, options);
+              }
+              if (JSON.stringify(mappedValue) !== JSON.stringify(proposal.proposedValue)) {
+                console.log(`[AI Enrichment] Mapped "${proposal.proposedValue}" -> "${mappedValue}" for ${proposal.code}`);
+              }
             }
-          }
 
-          const isDifferent = currentValue !== mappedValue;
-          const isAutoSelected = proposal.confidence >= EXTENSION_CONFIG.confidenceThreshold;
+            const isDifferent = currentValue !== String(mappedValue);
+            const isAutoSelected = proposal.confidence >= EXTENSION_CONFIG.confidenceThreshold;
 
-          return {
-            ...proposal,
-            proposedValue: mappedValue,
-            currentValue,
-            isSelected: isDifferent && isAutoSelected, // Auto-select high-confidence changes
-            isDifferent,
-            attributeType: attrType,
-            options: options,
-            scopable: metadata?.scopable || false,
-            localizable: metadata?.localizable || false,
-          };
-        }).filter((c): c is EnrichmentComparison => c !== null);
+            return {
+              ...proposal,
+              proposedValue: mappedValue,
+              currentValue,
+              isSelected: isDifferent && isAutoSelected,
+              isDifferent,
+              attributeType: attrType,
+              options: options,
+              scopable: metadata?.scopable || false,
+              localizable: metadata?.localizable || false,
+            } as EnrichmentComparison;
+          })
+          .filter((c): c is EnrichmentComparison => c !== null);
 
         console.log('[AI Enrichment] Created', comparisons.length, 'comparisons (skipped unsupported types)');
 
