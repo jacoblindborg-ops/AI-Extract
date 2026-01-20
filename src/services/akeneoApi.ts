@@ -163,6 +163,22 @@ class AkeneoApiService {
   }
 
   /**
+   * Get reference entity records
+   * Used for akeneo_reference_entity and akeneo_reference_entity_collection attributes
+   */
+  async getReferenceEntityRecords(referenceEntityCode: string): Promise<any[]> {
+    const response = await fetch(`/api/akeneo-proxy?method=GET&path=reference-entities/${referenceEntityCode}/records`);
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to fetch reference entity records');
+    }
+
+    const data = await response.json();
+    return data._embedded?.items || [];
+  }
+
+  /**
    * Update product by UUID
    */
   async updateProduct(uuid: string, productData: any): Promise<any> {

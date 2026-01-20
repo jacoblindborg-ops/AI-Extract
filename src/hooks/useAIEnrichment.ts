@@ -81,12 +81,32 @@ export function useAIEnrichment(productUuid: string, promptId?: string, extracti
             const attr = await akeneoApi.getAttribute(code);
 
             // Fetch options for select/multiselect attributes
-            let options = [];
+            let options: any[] = [];
+            let referenceEntityCode: string | null = null;
+
             if (attr.type === 'pim_catalog_simpleselect' || attr.type === 'pim_catalog_multiselect') {
               try {
                 options = await akeneoApi.getAttributeOptions(code);
               } catch (err) {
                 console.warn(`[AI Enrichment Iframe] Could not fetch options for ${code}`);
+              }
+            }
+
+            // Fetch reference entity records for reference entity attributes
+            if (attr.type === 'akeneo_reference_entity' || attr.type === 'akeneo_reference_entity_collection') {
+              referenceEntityCode = attr.reference_data_name;
+              if (referenceEntityCode) {
+                try {
+                  const records = await akeneoApi.getReferenceEntityRecords(referenceEntityCode);
+                  // Convert records to option-like format for consistent mapping
+                  options = records.map((record: any) => ({
+                    code: record.code,
+                    labels: record.values?.label?.[0]?.data ? { en_US: record.values.label[0].data } : {},
+                  }));
+                  console.log(`[AI Enrichment Iframe] Fetched ${options.length} records for reference entity ${referenceEntityCode}`);
+                } catch (err) {
+                  console.warn(`[AI Enrichment Iframe] Could not fetch records for reference entity ${referenceEntityCode}:`, err);
+                }
               }
             }
 
@@ -97,6 +117,7 @@ export function useAIEnrichment(productUuid: string, promptId?: string, extracti
               options: options,
               scopable: attr.scopable || false,
               localizable: attr.localizable || false,
+              referenceEntityCode: referenceEntityCode,
             };
           } catch (err: any) {
             console.warn(`[AI Enrichment Iframe] Could not fetch metadata for attribute ${code}:`, err.message);
@@ -204,8 +225,6 @@ export function useAIEnrichment(productUuid: string, promptId?: string, extracti
         // Unsupported attribute types that we can't handle
         const unsupportedTypes = [
           'pim_catalog_table',
-          'akeneo_reference_entity',
-          'akeneo_reference_entity_collection',
           'pim_catalog_asset_collection',
           'pim_catalog_file',
           'pim_catalog_image',
@@ -278,11 +297,14 @@ export function useAIEnrichment(productUuid: string, promptId?: string, extracti
               return null;
             }
 
-            // Map proposed value to valid option code for select attributes
+            // Map proposed value to valid option/record code for select and reference entity attributes
             let mappedValue: any = proposal.proposedValue;
-            if ((attrType === 'pim_catalog_simpleselect' || attrType === 'pim_catalog_multiselect') && options.length > 0) {
+            const isSelectType = attrType === 'pim_catalog_simpleselect' || attrType === 'pim_catalog_multiselect';
+            const isReferenceEntityType = attrType === 'akeneo_reference_entity' || attrType === 'akeneo_reference_entity_collection';
+
+            if ((isSelectType || isReferenceEntityType) && options.length > 0) {
               if (Array.isArray(proposal.proposedValue)) {
-                // Multiselect - map each value
+                // Multiselect or reference entity collection - map each value
                 mappedValue = (proposal.proposedValue as string[]).map((v: string) => mapToOptionCode(v, options));
               } else {
                 mappedValue = mapToOptionCode(proposal.proposedValue, options);
