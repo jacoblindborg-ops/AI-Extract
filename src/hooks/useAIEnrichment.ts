@@ -64,18 +64,37 @@ export function useAIEnrichment(productUuid: string, promptId?: string, extracti
   /**
    * Fetch attributes metadata for a product family
    */
-  const fetchFamilyAttributes = useCallback(async (familyCode: string) => {
+  const fetchFamilyAttributes = useCallback(async (
+    familyCode: string,
+    productValues: ProductValues,
+    mode: string
+  ) => {
     try {
       console.log('[AI Enrichment Iframe] Fetching attributes for family:', familyCode);
 
       // Direct REST API call - no SDK!
       const family = await akeneoApi.getFamily(familyCode);
-      const attributeCodes = family.attributes || [];
+      let attributeCodes = family.attributes || [];
       console.log('[AI Enrichment Iframe] Family loaded:', family.code, 'with', attributeCodes.length, 'attributes');
+
+      // Filter based on extraction mode
+      if (mode === 'empty') {
+        // Only fetch metadata for attributes that are currently empty
+        attributeCodes = attributeCodes.filter((code: string) => {
+          const currentValues = productValues[code];
+          if (!currentValues || currentValues.length === 0) return true;
+          return currentValues.every((val) => !val.data || val.data === '' || val.data === null);
+        });
+        console.log('[AI Enrichment Iframe] Filtered to', attributeCodes.length, 'empty attributes');
+      } else {
+        // Mode 'all' - keep limit to avoid API overload
+        attributeCodes = attributeCodes.slice(0, 15);
+        console.log('[AI Enrichment Iframe] Limited to first 15 attributes for "all" mode');
+      }
 
       // Fetch detailed metadata for each attribute (type, options)
       const attributeMetadata = await Promise.all(
-        attributeCodes.slice(0, 15).map(async (code: string) => {
+        attributeCodes.map(async (code: string) => {
           try {
             // Direct REST API call
             const attr = await akeneoApi.getAttribute(code);
@@ -159,7 +178,11 @@ export function useAIEnrichment(productUuid: string, promptId?: string, extracti
         // Fetch family attributes if product has a family
         let familyAttributes: string[] | null = null;
         if (state.product.family) {
-          familyAttributes = await fetchFamilyAttributes(state.product.family);
+          familyAttributes = await fetchFamilyAttributes(
+            state.product.family,
+            state.product.values,
+            extractionMode || 'all'
+          );
           console.log('[AI Enrichment] Family attributes:', familyAttributes);
         }
 
